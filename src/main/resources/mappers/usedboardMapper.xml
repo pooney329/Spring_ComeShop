@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 다른 mapper와 중복되지 않도록 네임스페이스 기재 -->
+<mapper namespace="usedboard">
+	<select id="list"
+		resultType="com.example.Computer.model.usedboard.dto.UsedboardDTO">
+		<include refid="paging_header" />
+		(SELECT Row_Number() OVER (order by b.ubno desc ) AS
+		rownum,b.ubno,title,b.regdate,viewcnt,uNAME,kind,price,trade,productname,i.imgname as img,(select count(*) from usedreply
+		where ubno=b.ubno) AS cnt FROM usedboard b, member m,usedboardimg i
+		<include refid="search" />
+		order by ubno DESC)
+		<include refid="paging_footer" />
+	</select>
+
+	
+
+	<sql id="search">  <!--sql은 부분 sql -->
+		<choose>
+			<when test="search_option=='all'">
+				WHERE  i.ubno= b.ubno  and  b.writer = m.uid and (uname LIKE
+				CONCAT('%',#{keyword},'%')
+				or content LIKE CONCAT('%',#{keyword},'%')
+				or title LIKE CONCAT('%',#{keyword},'%')
+				)
+			</when>
+			<otherwise>
+				where i.ubno= b.ubno  and b.writer =m.uid
+				and ${search_option} like
+				CONCAT('%',#{keyword},'%')
+			</otherwise>
+		</choose>
+	</sql>
+	
+	
+	<sql id="search2">  <!--sql은 부분 sql -->
+		<choose>
+			<when test="search_option=='all'">
+				WHERE  b.writer = m.uid and (uname LIKE
+				CONCAT('%',#{keyword},'%')
+				or content LIKE CONCAT('%',#{keyword},'%')
+				or title LIKE CONCAT('%',#{keyword},'%')
+				)
+			</when>
+			<otherwise>
+				where i.ubno= b.ubno  and b.writer =m.uid
+				and ${search_option} like
+				CONCAT('%',#{keyword},'%')
+			</otherwise>
+		</choose>
+	</sql>
+	
+	
+	
+	
+	<sql id="paging_footer">
+		A )B where rownum between #{start} AND #{end}
+	</sql>
+	<sql id="paging_header">
+		SELECT * FROM (SELECT A.* FROM
+	</sql>
+
+	
+	<select id="count" resultType="int">
+		select count(*) from usedboard b ,member m
+		<include refid="search2" />
+	</select>
+	
+	<!--이름을가지고 아이디찾아서 글목록보여주오가할때 list에 아이디넣어서 찾고자 할때 사용한다.   -->
+	<select id = "nametoid" resultType="String">
+		SELECT  distinct(uid) FROM member m  ,  usedboard  u WHERE m.uname = #{keyword}
+	</select>
+	
+	<!--조회수증가  -->
+	<update id="increaseviewcnt">
+		update usedboard set viewcnt = viewcnt+1 where ubno=#{ubno} 
+	</update>
+	
+	<!--글읽기  -->
+	<select id="view" resultType="com.example.Computer.model.usedboard.dto.UsedboardDTO">
+		SELECT b.ubno,title,content,b.regdate,viewcnt,uname,writer,trade,price,productname,kind,i.imgname as img,leftposition,rightposition,(SELECT phonenumber FROM member,usedboard WHERE member.uid = usedboard.writer AND usedboard.ubno=55) AS phonenumber from usedboard 
+b , member m , usedboardimg i where b.writer=m.uid AND b.ubno =#{ubno} AND i.ubno=b.ubno;
+	</select>
+	
+	
+	
+	<insert id="usedreplyinsert">
+		insert into usedreply(ubno,replytext,replyer,ugroup,ustep,uindent) values (#{ubno}, #{replytext},#{replyer},(SELECT COALESCE(MAX(r.ugroup)+1,1) FROM usedreply r),0,0)
+		
+	</insert>
+	
+	
+	
+	<select id="usedreplycount" resultType="int">
+		select count(*) from usedreply where ubno =#{ubno}
+	</select>
+	
+	
+	<select id="usedreplylist"
+	resultType="com.example.Computer.model.usedboard.dto.UsedReplyDTO">
+	<include refid="reply_paging_header" />
+	select Row_Number() OVER (order by ubno desc ) AS rownum ,
+	urno,ubno,replytext,replyer,uname,r.regdate,r.updatedate,ugroup,uindent,ustep,udel,(SELECT writer
+	FROM usedboard WHERE ubno=r.ubno) AS writer FROM usedreply r, member m WHERE r.replyer =
+	m.uid
+	AND ubno=#{ubno} ORDER BY ugroup desc ,ustep ASC
+	<include refid="reply_paging_footer" />
+</select>
+	<sql id="reply_paging_header">
+		SELECT * FROM (
+	</sql>
+	<sql id="reply_paging_footer">
+		) A WHERE rownum BETWEEN 1 AND 10
+	</sql>
+	
+	<!-- 자유게시글삽입 -->
+	<insert id="usedboardinsert">
+	INSERT INTO usedboard (title,content,writer,kind,price,productname,trade,leftposition,rightposition) values(#{title},#{content},#{writer},#{kind},#{price},#{productname},#{trade},#{leftposition},#{rightposition})
+	</insert>
+	
+	
+	<!--자유게시글수정  -->
+	
+	<update id="usedboardupdate">
+		update usedboard set title=#{title}, content =#{content}, leftposition = #{leftposition} , rightposition = #{rightposition} , kind = #{kind} , price=#{price} , trade =#{trade}, productname = #{productname} where ubno=#{ubno}
+	</update>
+	
+	
+	<!--중고게시물삭제 -->
+	<delete id="usedboarddelete">
+		delete from usedboard where ubno=#{ubno}
+	</delete>
+	
+	
+	<!--중고댓글삭제 -->
+	<update id="usedreplydel">
+		update usedreply set udel = 1 where ubno=#{ubno} and urno=#{urno}
+	</update>
+	<!-- <delete id="usedreplydel">
+		delete from usedreply where ubno=#{ubno} and urno=#{urno}
+	</delete> -->
+	
+	<!--대댓글 달기위하여 추가할 댓글 아래로 전부  step, indent를 1씩증가   -->
+	<update id="usedrepleychange">
+		update usedreply set ustep= ustep+1 where ugroup = #{ugroup} and ustep > #{ustep} 
+	</update>
+	<!-- repleychange이후 실제 대댓글 삽입  -->
+	<insert id="usedrepleyadd">
+		insert into usedreply(ubno,replyer,replytext,ugroup,ustep,uindent) values(#{ubno},#{replyer},#{replytext},#{ugroup},#{ustep}+1,#{uindent}+1)
+	
+	</insert>
+	
+	
+	
+	
+	
+	<!--첨부파일삭제  -->
+	<delete id ="deleteimg">
+		delete from usedboardimg where imgname=#{imgname}
+	</delete>
+	
+	
+	<!-- 게시판에는 이미 업드드파일이 업로드되어있다 글쓰기 완성 버튼을 누를시 게시판이 생성되고 그다음 파일이름을 레코드에 넣아줘야하기떄문에 max(bno)를 썼다 -->
+	<insert id ="addimg">
+		insert into usedboardimg (ubno,imgname) select max(ubno), #{imgname} from usedboard
+	</insert>
+	<select id="getimg" resultType="String">
+		select imgname from usedboardimg where ubno=#{ubno} order by regdate
+	</select>
+	<update id ="updateimg">
+		insert into usedboardimg (imgname,ubno) values(#{imgname},#{ubno})
+	</update>
+	
+	<select id="usedimgsearch" resultType="String" >
+		SELECT imgname FROM usedboardimg WHERE imgname = #{imgname} AND ubno = #{ubno};
+	</select>
+	
+	
+	
+	
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 다른 mapper와 중복되지 않도록 네임스페이스 기재 -->
+<mapper namespace="Freeboard">
+	<select id="list"
+		resultType="com.example.Computer.model.freeboard.dto.FreeboardDTO">
+		<include refid="paging_header" />
+		(SELECT Row_Number() OVER (order by fbno desc ) AS
+		rownum,fbno,title,regdate,viewcnt,uNAME,(select count(*) from freereply
+		where fbno=b.fbno) AS cnt FROM freeboard b, member m
+		<include refid="search" />
+		order by fbno DESC)
+		<include refid="paging_footer" />
+	</select>
+
+
+
+	<sql id="search">  <!--sql은 부분 sql -->
+		<choose>
+			<when test="search_option=='all'">
+				WHERE b.writer = m.uid and (uname LIKE
+				CONCAT('%',#{keyword},'%')
+				or content LIKE CONCAT('%',#{keyword},'%')
+				or title LIKE CONCAT('%',#{keyword},'%')
+				)
+			</when>
+			<otherwise>
+				where b.writer =m.uid
+				and ${search_option} like
+				CONCAT('%',#{keyword},'%')
+			</otherwise>
+		</choose>
+	</sql>
+	<sql id="paging_footer">
+		A )B where rownum between #{start} AND #{end}
+	</sql>
+	<sql id="paging_header">
+		SELECT * FROM (SELECT A.* FROM
+	</sql>
+
+	
+	<select id="count" resultType="int">
+		select count(*) from freeboard b ,member m
+		<include refid="search" />
+	</select>
+	
+	<!--이름을가지고 아이디찾아서 글목록보여주오가할때 list에 아이디넣어서 찾고자 할때 사용한다.   -->
+	<select id = "nametoid" resultType="String">
+		SELECT  distinct(uid) FROM member m  ,  freeboard  f WHERE m.uname = #{keyword}
+	</select>
+	
+	<!--조회수증가  -->
+	<update id="increaseviewcnt">
+		update freeboard set viewcnt = viewcnt+1 where fbno=#{fbno} 
+	</update>
+	
+	<!--글읽기  -->
+	<select id="view" resultType="com.example.Computer.model.freeboard.dto.FreeboardDTO">
+		select fbno,title,content,regdate,viewcnt,uname,writer from freeboard b , member m where b.writer=m.uid and fbno =#{fbno}
+	</select>
+	
+	
+	<!-- 부모댓글추가하기 -->
+	<insert id="freereplyinsert">
+		insert into freereply(fbno,replytext,replyer,fgroup,fstep,findent) values (#{fbno}, #{replytext},#{replyer},(SELECT COALESCE(MAX(r.fgroup)+1,1) FROM freereply r),0,0)
+		
+		<!-- insert into freereply(fbno,replytext,replyer,fgroup,fstep,findent) VALUES (1, 'aa', 'hookcu329',(SELECT COALESCE(MAX(r.fgroup)+1,1) FROM freereply r),0,0); -->
+	</insert>
+	
+	<select id="freereplycount" resultType="int">
+		select count(*) from freereply where fbno =#{fbno}
+	</select>
+	
+	
+	<select id="freereplylist"
+	resultType="com.example.Computer.model.freeboard.dto.FreeReplyDTO">
+	<include refid="reply_paging_header" />
+	select Row_Number() OVER (order by fbno desc ) AS rownum ,
+	frno,fbno,replytext,replyer,uname,r.regdate,r.updatedate, fgroup,fstep,findent,(SELECT writer
+	FROM freeboard WHERE fbno=r.fbno) AS writer FROM freereply r, member m WHERE r.replyer =
+	m.uid
+	AND fbno=#{fbno} ORDER BY fgroup desc ,fstep ASC
+	<include refid="reply_paging_footer" />
+</select>
+	<sql id="reply_paging_header">
+		SELECT * FROM (
+	</sql>
+	<sql id="reply_paging_footer">
+		) A WHERE rownum <!-- BETWEEN 1 AND 10 -->
+	</sql>
+	
+	<!-- 자유게시글삽입 -->
+	<insert id="freeboardinsert">
+	INSERT INTO freeboard (title,content,writer) values(#{title},#{content},#{writer})
+	</insert>
+	
+	
+	<!--자유게시글수정  -->
+	
+	<update id="freeboardupdate">
+		update freeboard set title=#{title}, content =#{content} where fbno=#{fbno}
+	</update>
+	
+	
+	<!--자유게시물삭제 -->
+	<delete id="freeboarddelete">
+		delete from freeboard where fbno=#{fbno}
+	</delete>
+	
+	
+	<!--자유댓글삭제 -->
+	<delete id="freereplydel">
+		delete from freereply where fbno=#{fbno} and frno=#{frno}
+	</delete>
+	
+	<!--대댓글 달기위하여 추가할 댓글 아래로 전부  step, indent를 1씩증가   -->
+	<update id="repleychange">
+		update freereply set fstep= fstep+1 where fgroup = #{fgroup} and fstep > #{fstep} 
+	</update>
+	<!-- repleychange이후 실제 대댓글 삽입  -->
+	<insert id="repleyadd">
+		insert into freereply(fbno,replyer,replytext,fgroup,fstep,findent) values(#{fbno},#{replyer},#{replytext},#{fgroup},#{fstep}+1,#{findent}+1)
+	
+	</insert>	
+		
+		
+		
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

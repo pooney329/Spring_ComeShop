@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 다른 mapper와 중복되지 않도록 네임스페이스 기재 -->
+<mapper namespace="Product">
+ 	<select id="selectlist" resultType="com.example.Computer.model.product.dto.ProductDTO">
+ 			<include refid="kinds_header"/>
+ 			<include refid="kinds"/>
+ 			<include refid="kinds_end"/>
+ 			 
+	</select>
+ 	
+ 	
+ 	<sql id="kinds">
+ 		<choose>
+ 			<when test="kinds=='cpu'">
+ 				 
+	 			
+ 				from cpuinformation, product WHERE cpuinformation.productid = product.productid and product.kinds = #{kinds} AND manufacturer LIKE #{manufacturer} AND cpukinds LIKE #{cpukinds} AND core LIKE #{core} AND thread LIKE #{thread} AND builtingraphics LIKE #{builtingraphics}	
+ 			</when>
+ 			<when test="kinds=='gpu'">
+ 						 
+	 			
+ 				from gpuinformation, product WHERE gpuinformation.productid = product.productid
+				  and product.kinds = #{kinds} AND manufacturer LIKE #{manufacturer} AND chipset LIKE #{chipset} AND memory LIKE #{memory}
+ 			</when>
+ 			
+ 			<when test="kinds=='ssd'">
+ 				from ssdinformation, product WHERE ssdinformation.productid = product.productid
+				  and product.kinds = #{kinds} AND manufacturer LIKE #{manufacturer} AND capacity LIKE #{capacity} AND producttype LIKE #{producttype} AND memorytype LIKE #{memorytype}
+ 			</when>
+ 			<when test="kinds=='mainboard'">
+ 				from mainboardinformation, product WHERE mainboardinformation.productid = product.productid
+				  and product.kinds = #{kinds} AND manufacturer LIKE #{manufacturer}  AND producttype LIKE #{producttype} AND memorytype LIKE #{memorytype} AND memoryslot LIKE #{memoryslot} 
+				  AND memorycapacity LIKE #{memorycapacity} AND graphicoutput LIKE #{graphicoutput}
+ 			</when>		
+ 			<when test="kinds=='memory'">
+ 				from memoryinformation, product WHERE memoryinformation.productid = product.productid
+				  and product.kinds = #{kinds} AND manufacturer LIKE #{manufacturer}  AND producttype LIKE #{producttype} AND memorytype LIKE #{memorytype} AND memorycapacity LIKE #{memorycapacity} 
+				  AND clock LIKE #{clock}
+ 			</when>
+ 		</choose>
+ 	</sql>
+ 	<sql id="kinds_header">
+ 		<choose>
+ 			<when test="kinds=='cpu'">
+ 				select * from (SELECT product.productid, product.img, product.productname, product.price, 
+	 		concat(cpuinformation.manufacturer, "/", cpuinformation.core, "/", cpuinformation.thread) AS information,Row_Number() OVER (order by productid asc ) AS rownum
+ 			</when>
+ 			<when test="kinds=='gpu'">
+ 			select * from (SELECT product.productid, product.img, product.productname, product.price, 
+	 	concat(gpuinformation.manufacturer, "/", gpuinformation.memory, "/", gpuinformation.chipset) AS information, Row_Number() OVER (order by productid asc ) AS rownum
+ 			</when>
+ 			<when test="kinds=='ssd'">
+ 			select * from (SELECT product.productid, product.img, product.productname, product.price, 
+	 	concat(ssdinformation.manufacturer, "/", ssdinformation.memorytype, "/", ssdinformation.capacity) AS information, Row_Number() OVER (order by productid asc ) AS rownum
+ 			</when>
+ 			<when test="kinds=='mainboard'">
+ 			select * from (SELECT product.productid, product.img, product.productname, product.price, 
+	 	concat(mainboardinformation.manufacturer, "/", mainboardinformation.memorytype, "/", mainboardinformation.graphicoutput) AS information, Row_Number() OVER (order by productid asc ) AS rownum
+ 			</when>
+ 			
+ 			<when test="kinds=='memory'">
+ 			select * from (SELECT product.productid, product.img, product.productname, product.price, 
+	 	concat(memoryinformation.manufacturer, "/", memoryinformation.memorytype, "/", memoryinformation.memorycapacity) AS information, Row_Number() OVER (order by productid asc ) AS rownum
+ 			</when>
+ 			
+ 		</choose>
+ 		
+ 	</sql>
+ 	<sql id="kinds_end">
+ 	)a WHERE rownum BETWEEN #{start} AND #{end}
+ 	</sql>
+ 	
+ 	
+ 	
+ 	
+ 	<select id="product_detail" resultType="com.example.Computer.model.product.dto.ProductDTO">
+	 	SELECT product.productid, productname, price, kinds, img, information ,shippingfee, standard,shipping ,box FROM product,product_delivery WHERE 
+	product.productid=#{productid};
+ 	</select>
+ 	
+ 	 <insert id="insertcart">
+    	insert into cart(uid,productid,qty) values(#{uid},#{productid},#{qty})
+    </insert>
+	
+	<select id="checkcompatibility" resultType="Integer">
+		SELECT b FROM test WHERE a=#{mainnum} and b=#{comparenum}
+	</select>
+	<select id="notcheckcompatibilityname" resultType="String">
+		select productname from product where productid=#{productid}
+	</select>
+	<select id="productprice" resultType="Integer">
+		select price from product where productid=#{productid}
+	</select>
+	
+	<!--상품레코드 개수구하기  -->
+	<select id="productcount" resultType="Integer">
+		select count(*) <include refid="kinds"/>
+	</select>
+	<!--상품검색 레코드 개수하기   -->
+	<select id="product_select_count" resultType="Integer">
+		SELECT count(*) FROM product WHERE productname like	CONCAT('%',#{keyword},'%')
+	</select>
+	
+	<select id="product_search" resultType="com.example.Computer.model.product.dto.ProductDTO">
+		select * from (SELECT product.productid, product.img, product.productname, product.price,Row_Number() OVER (order 
+by productid asc ) AS rownum,productinformation.information,product.kinds from productinformation, product WHERE product.productname LIKE CONCAT('%',#{keyword},'%') AND product.productid = productinformation.productid )a WHERE rownum BETWEEN 
+#{start} AND #{end} 
+	</select>
+	<select id="lowsearch_list" resultType="com.example.Computer.model.product.dto.ProductDTO">
+		SELECT * FROM product WHERE productname like CONCAT('%',#{prdname},'%')
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

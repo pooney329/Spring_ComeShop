@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 다른 mapper와 중복되지 않도록 네임스페이스 기재 -->
+<mapper namespace="Member">
+ 	<select id="login" resultType="com.example.Computer.model.member.dto.UserDTO">
+ 		select * from member where uid = #{uid} and upw = #{upw}
+ 	</select>
+	
+	<update id="keeplogin">
+	 	update member set session = #{sessionid} ,  sessionexpire = #{expire} where uid = #{uid};
+	</update>
+	
+	<select id="checkLoginBefore" resultType="com.example.Computer.model.member.dto.UserDTO">
+        select * from member
+         where session = #{loginCookie}
+           and sessionexpire > now()
+    </select>
+   	<select id="getBySnsNaver" resultType="com.example.Computer.model.member.dto.UserDTO">
+        select * from member where naverid = #{naverid}
+    </select>
+    
+    <select id="getBySnsGoogle" resultType="com.example.Computer.model.member.dto.UserDTO">
+        select * from member where googleid = #{googleid}
+    </select>
+    
+    <select id="pointcheck" resultType="Integer">
+    	SELECT point FROM member WHERE uid=#{uid}
+    </select>
+    
+    <select id="uidcheck" resultType="String">
+    	SELECT uid FROM member WHERE uid=#{uid}
+    </select>
+    
+    <insert id="memberinsert">
+    	insert into member (uid,upw,email,uname,phonenumber,point,googleid,naverid) VALUES(#{uid},#{upw},#{email},#{uname},#{phonenumber},0,#{googleid},#{naverid})
+    </insert>
+    
+    
+    
+    	
+    
+    
+    
+    <!-- <sql id="snsmemberinsert">
+ 		<choose>
+ 			<when test="kinds=='cpu'">
+ 			insert into member (uid,email,uname,phonenumber,point) VALUES(#{uid},#{upw},#{email},#{uname},#{phonenumber},0)
+ 			</when>
+ 			<when test="kinds=='gpu'">
+ 			insert into member (uid,email,uname,phonenumber,point) VALUES(#{uid},#{upw},#{email},#{uname},#{phonenumber},0)
+ 			</when>
+ 			
+ 			</choose>
+ 	</sql> -->
+    
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

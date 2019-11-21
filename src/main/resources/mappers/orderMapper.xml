@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 다른 mapper와 중복되지 않도록 네임스페이스 기재 -->
+<mapper namespace="order">
+ 	<insert id="insertcart">
+    	insert into cart(uid,productid,qty) values(#{uid},#{productid},#{qty})
+    </insert>
+    <select id="basketlist" resultType="com.example.Computer.model.order.dto.BasketDTO">
+    	SELECT c.productid,SUM(qty) AS qty ,SUM(qty)*price AS sum ,p.price,p.productname,p.img from cart c,product p where c.productid = p.productid and uid=#{uid} GROUP BY c.productid;
+    </select>
+    <select id="orderproductinformation" resultType="com.example.Computer.model.order.dto.BasketDTO">
+    	SELECT * ,price * #{qty} as sum ,#{qty} as qty FROM product WHERE productid=#{productid}
+    </select>
+    <delete id="deletebasket">
+    	DELETE FROM cart WHERE uid=#{uid} AND productid=#{productid}
+    </delete>
+    <select id="selectorderid" resultType="Integer">
+    	SELECT COALESCE(max(CONVERT(SUBSTRING(orderid,9), SIGNED INTEGER))+1,1) FROM orderinfo
+    	
+    </select>
+    
+    
+    <insert id="orderinsert">
+    	INSERT INTO orderinfo(orderid ,  uid, zipcode , address1,address2,  phonenumber , orderdate,productid,qty, 
+    	price, Reciever , paymenttype,processingstatus,cardnumber,cardtype,depositdate,depositbank,message,accountnumber,depositor,cardbuyer,sumprice,usepoint,impuid)
+VALUE(#{orderid},#{uid},#{zipcode},#{address1},#{address2},#{phonenumber},NOW(),#{productid},#{qty},#{price},#{reciever},#{paymenttype},'주문대기중',#{cardnumber}
+,#{cardtype},#{depositdate},#{depositbank},#{message},#{accountnumber},#{depositor},#{cardbuyer},#{sumprice},#{point},#{impuid});
+    </insert>
+    <!--사용자의 지금까지의 주문정보들   -->
+    <select id="orderinfolist" resultType="com.example.Computer.model.order.dto.OrderInfoDTO">
+     	<!-- SELECT * FROM orderinfo WHERE uid=#{uid} AND orderid=#{orderid} -->
+     	SELECT * FROM (select DISTINCT(orderid) AS ordid , a.*,b.productname, Row_Number() OVER (order by orderid desc ) AS rownum,(SELECT COUNT(*) FROM orderinfo WHERE orderid = a.orderid)AS cnt from orderinfo a ,product b where uid=#{uid} AND a.productid=b.productid GROUP BY orderid order by orderdate DESC) a
+		WHERE rownum BETWEEN #{start} AND #{end} 
+    </select>
+    
+    <select id="orderread" resultType="com.example.Computer.model.order.dto.OrderInfoDTO">
+    	SELECT orderinfo.`*`, product.productname FROM orderinfo,product WHERE  uid = #{uid} AND  orderid=#{orderid} AND  orderinfo.productid = product.productid
+    </select>
+    
+    <!--주문내역의 레코드 총개수   -->
+    <select id="ordercount" resultType="Integer">
+    	SELECT  COUNT(DISTINCT(orderid)) FROM orderinfo where uid=#{uid}
+    </select>
+    
+    
+	<delete id="orderdelete">
+		delete from orderinfo where orderid = #{orderid}
+	</delete>
+    
+    
+     
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

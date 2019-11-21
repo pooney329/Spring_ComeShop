@@ -1,0 +1,13 @@
+##환경설정
+root-context.xml
+.classpath
+.settings/
+.project
+.springBeans
+
+##이미지파일
+images/
+
+*.jpg
+
+target/
