@@ -30,9 +30,9 @@
 ### Sequence Diagram 
 
 <div>
-  <img src="https://user-images.githubusercontent.com/57570154/69493152-900d0880-0eee-11ea-92bc-1bd5e7cea065.PNG" width="50%"></img>
-  <img src="https://user-images.githubusercontent.com/57570154/69493153-9307f900-0eee-11ea-8f2c-95c3b9f5b071.PNG" width="50%"></img>
-</div
+  <img src="https://user-images.githubusercontent.com/57570154/69493152-900d0880-0eee-11ea-92bc-1bd5e7cea065.PNG" width="40%"></img>
+  <img src="https://user-images.githubusercontent.com/57570154/69493153-9307f900-0eee-11ea-8f2c-95c3b9f5b071.PNG" width="40%"></img>
+</div>
 
 ### 프로젝트 구조도
 <img src="https://user-images.githubusercontent.com/57570154/69493183-14f82200-0eef-11ea-8862-06d0d638167d.PNG" width="50%"></img>
